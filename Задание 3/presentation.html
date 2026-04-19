@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Модуль диагностики датчиков — Хакатон РТУ МИРЭА 2026</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #0a0e1a;
+    color: #e0e6f0;
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  .slides { width: 100%; height: 100vh; position: relative; }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 60px 80px;
+    animation: fadeIn 0.4s ease;
+  }
+  .slide.active { display: flex; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Accent line top */
+  .slide::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #00a8ff, #0066cc, #00a8ff);
+  }
+
+  h1 { font-size: 2.6em; font-weight: 700; line-height: 1.2; }
+  h2 { font-size: 1.9em; font-weight: 600; color: #00a8ff; margin-bottom: 30px; }
+  h3 { font-size: 1.2em; font-weight: 600; color: #80c8ff; margin-bottom: 8px; }
+
+  .subtitle { font-size: 1.2em; color: #80c8ff; margin-top: 12px; }
+  .org { font-size: 1em; color: #556; margin-top: 30px; letter-spacing: 2px; text-transform: uppercase; }
+
+  /* Grid layouts */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; width: 100%; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; width: 100%; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 20px; width: 100%; }
+
+  /* Cards */
+  .card {
+    background: rgba(0,168,255,0.07);
+    border: 1px solid rgba(0,168,255,0.25);
+    border-radius: 12px;
+    padding: 24px;
+  }
+  .card.bad  { border-color: rgba(255,80,80,0.4);  background: rgba(255,80,80,0.07); }
+  .card.good { border-color: rgba(0,220,100,0.4);  background: rgba(0,220,100,0.07); }
+  .card.pot  { border-color: rgba(255,180,0,0.4);  background: rgba(255,180,0,0.07); }
+  .card.dark { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.1); }
+
+  .badge {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .badge-bad  { background: rgba(255,80,80,0.2);  color: #ff8080; border: 1px solid #ff5050; }
+  .badge-good { background: rgba(0,220,100,0.2); color: #50e090; border: 1px solid #00dc64; }
+  .badge-pot  { background: rgba(255,180,0,0.2);  color: #ffcc40; border: 1px solid #ffb800; }
+  .badge-blue { background: rgba(0,168,255,0.2);  color: #60ccff; border: 1px solid #00a8ff; }
+
+  p { line-height: 1.6; color: #b0bcd0; font-size: 0.95em; }
+  ul { padding-left: 18px; }
+  li { line-height: 1.8; color: #b0bcd0; font-size: 0.95em; }
+
+  /* Big number */
+  .big-num { font-size: 2.8em; font-weight: 700; color: #00a8ff; }
+  .big-num.green { color: #00dc64; }
+  .big-num.red   { color: #ff5050; }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+  th { background: rgba(0,168,255,0.15); color: #80c8ff; padding: 10px 14px; text-align: left; }
+  td { padding: 9px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); color: #c0ccd8; }
+  tr:hover td { background: rgba(255,255,255,0.03); }
+  .ok  { color: #00dc64; font-weight: 600; }
+  .num { font-family: monospace; color: #60ccff; }
+
+  /* Flow diagram */
+  .flow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .flow-box {
+    background: rgba(0,168,255,0.1);
+    border: 1px solid rgba(0,168,255,0.3);
+    border-radius: 8px;
+    padding: 12px 20px;
+    text-align: center;
+    font-size: 0.9em;
+  }
+  .flow-arrow { color: #0066cc; font-size: 1.5em; }
+
+  /* Code */
+  code {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.88em;
+    color: #80ffcc;
+  }
+  pre {
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(0,168,255,0.2);
+    border-radius: 10px;
+    padding: 18px 22px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85em;
+    color: #80ffcc;
+    width: 100%;
+    line-height: 1.6;
+  }
+
+  /* Progress bar */
+  .bar-wrap { background: rgba(255,255,255,0.06); border-radius: 4px; height: 8px; margin-top: 4px; }
+  .bar { height: 8px; border-radius: 4px; }
+  .bar.green { background: linear-gradient(90deg, #00dc64, #00a8ff); }
+  .bar.red   { background: linear-gradient(90deg, #ff5050, #ff8040); }
+  .bar.yellow{ background: linear-gradient(90deg, #ffb800, #ff8800); }
+
+  /* Navigation */
+  nav {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: rgba(10,14,26,0.9);
+    border: 1px solid rgba(0,168,255,0.2);
+    border-radius: 30px;
+    padding: 10px 24px;
+    backdrop-filter: blur(10px);
+    z-index: 100;
+  }
+  nav button {
+    background: rgba(0,168,255,0.15);
+    border: 1px solid rgba(0,168,255,0.3);
+    color: #80c8ff;
+    padding: 8px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  nav button:hover { background: rgba(0,168,255,0.3); color: #fff; }
+  #counter { color: #556; font-size: 0.85em; min-width: 60px; text-align: center; }
+
+  /* Slide number */
+  .slide-num {
+    position: absolute;
+    top: 20px; right: 30px;
+    color: #334;
+    font-size: 0.8em;
+  }
+
+  /* Title slide special */
+  .slide-title { background: radial-gradient(ellipse at 50% 0%, rgba(0,100,200,0.15) 0%, transparent 70%); }
+  .slide-title h1 { text-align: center; font-size: 2.8em; }
+  .slide-title .subtitle { text-align: center; }
+
+  .icon { font-size: 2em; margin-bottom: 10px; }
+
+  .two-col { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 40px; width: 100%; align-items: start; }
+  .left-text ul li { margin-bottom: 8px; }
+
+  /* Table scroll wrapper */
+  .table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* ── Mobile ── */
+  @media (max-width: 768px) {
+    body { overflow: auto; }
+
+    .slides { height: auto; min-height: 100vh; position: static; }
+
+    .slide {
+      position: static;
+      display: none;
+      padding: 52px 18px 100px;
+      min-height: 100vh;
+      justify-content: flex-start;
+    }
+    .slide.active { display: flex; }
+
+    h1 { font-size: 1.6em; }
+    h2 { font-size: 1.3em; margin-bottom: 18px; }
+    h3 { font-size: 1em; }
+    p, li { font-size: 0.88em; }
+
+    .slide-title h1 { font-size: 1.7em; }
+    .subtitle { font-size: 1em; }
+    .org { font-size: 0.8em; letter-spacing: 1px; }
+
+    .grid-2, .grid-3, .grid-4, .two-col {
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .card { padding: 16px; }
+
+    .flow { gap: 6px; }
+    .flow-box { padding: 8px 12px; font-size: 0.8em; }
+    .flow-arrow { font-size: 1.1em; }
+
+    pre {
+      font-size: 0.72em;
+      padding: 12px 14px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table { font-size: 0.78em; }
+    th, td { padding: 7px 8px; }
+
+    .big-num { font-size: 2em; }
+
+    .slide-num { top: 12px; right: 14px; font-size: 0.72em; }
+
+    nav { bottom: 12px; padding: 8px 16px; gap: 10px; }
+    nav button { padding: 10px 18px; font-size: 0.85em; min-width: 80px; }
+
+    /* hide less critical columns in results table on small screens */
+    .hide-mobile { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="slides">
+
+  <!-- SLIDE 1: Title -->
+  <div class="slide slide-title active">
+    <div class="slide-num">1 / 11</div>
+    <h1>Модуль диагностики<br>сигнала датчиков</h1>
+    <p class="subtitle">Предиктивный анализ в реальном времени · Газотурбинные двигатели</p>
+    <div style="margin: 40px 0; display: flex; gap: 20px; justify-content: center;">
+      <span class="badge badge-bad">0 — Bad</span>
+      <span class="badge badge-good">1 — Good</span>
+      <span class="badge badge-pot">2 — Potential</span>
+    </div>
+    <p class="org">Хакатон РТУ МИРЭА 2026 · Задание 3</p>
+  </div>
+
+  <!-- SLIDE 2: Problem -->
+  <div class="slide">
+    <div class="slide-num">2 / 11</div>
+    <h2>Задача</h2>
+    <div class="grid-2">
+      <div>
+        <h3>Стандартные методы</h3>
+        <div class="card dark" style="margin-bottom:16px">
+          <p><strong style="color:#ff8080">Допусковый контроль</strong><br>
+          Срабатывает когда отказ <em>уже произошёл</em></p>
+        </div>
+        <div class="card dark">
+          <p><strong style="color:#ff8080">Темповый контроль</strong><br>
+          Не позволяет предсказать надвигающийся отказ</p>
+        </div>
+      </div>
+      <div>
+        <h3>Наше решение</h3>
+        <div class="card">
+          <p style="color:#e0e6f0; margin-bottom: 12px">Комбинация четырёх статистических детекторов с автокалибровкой:</p>
+          <ul>
+            <li>Обнаруживает фактические отказы → <span class="badge badge-bad">Bad</span></li>
+            <li>Предупреждает до отказа → <span class="badge badge-pot">Potential</span></li>
+            <li>Без ложных срабатываний → <span class="badge badge-good">Good</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: Approach Justification -->
+  <div class="slide">
+    <div class="slide-num">3 / 11</div>
+    <h2>Обоснование подхода</h2>
+    <div class="grid-2" style="margin-bottom: 20px;">
+      <div class="card dark">
+        <h3>Почему не машинное обучение?</h3>
+        <ul style="margin-top: 8px;">
+          <li>Требует размеченных данных об отказах — их нет</li>
+          <li>Нейросети не помещаются в 256 КБ на канал</li>
+          <li>Невозможно обучить прямо на контроллере</li>
+          <li>Чёрный ящик — нельзя объяснить срабатывание</li>
+        </ul>
+      </div>
+      <div class="card dark">
+        <h3>Почему не простые пороги?</h3>
+        <ul style="margin-top: 8px;">
+          <li>Фиксированный порог не учитывает прогрев ГТД</li>
+          <li>Не обнаруживает медленный дрейф внутри допуска</li>
+          <li>Не отличает шум от залипания датчика</li>
+          <li>Требует ручной настройки под каждый тип датчика</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card" style="width:100%">
+      <h3>Выбранный подход: комбинация лёгких статистических детекторов</h3>
+      <div class="grid-4" style="margin-top: 12px;">
+        <div>
+          <span class="badge badge-bad">Темп</span>
+          <p style="margin-top:6px">Скачок за один шаг — однозначный признак выброса или удара по датчику</p>
+        </div>
+        <div>
+          <span class="badge badge-bad">Дисперсия</span>
+          <p style="margin-top:6px">Нулевая дисперсия = залипание; аномально высокая = прибор шумит</p>
+        </div>
+        <div>
+          <span class="badge badge-pot">CUSUM</span>
+          <p style="margin-top:6px">Накапливает малые смещения, которые каждый по себе — норма, в сумме — отказ</p>
+        </div>
+        <div>
+          <span class="badge badge-pot">EWMA</span>
+          <p style="margin-top:6px">Сглаженное среднее выявляет нарастающий дрейф задолго до выхода за допуск</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: Architecture -->
+  <div class="slide">
+    <div class="slide-num">4 / 11</div>
+    <h2>Архитектура</h2>
+    <div class="flow" style="margin-bottom: 30px;">
+      <div class="flow-box">📂<br>Входной CSV<br><small style="color:#556">Наборы 1–5</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">🔄<br>Загрузчик<br><small style="color:#556">в статический массив</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">⏱<br>RT-цикл<br><small style="color:#556">20 мс / отсчёт</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">🧠<br>Диагностика<br><small style="color:#556">4 детектора</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">📊<br>CSV на канал<br><small style="color:#556">флаг 0/1/2</small></div>
+    </div>
+    <div class="grid-3">
+      <div class="card dark">
+        <h3>Калибровка</h3>
+        <p>Первые <strong style="color:#60ccff">250 отсчётов</strong> (~5 сек). Метод Уэлфорда: вычисление среднего и σ без буфера. Отбрасывание выбросов &gt;3σ.</p>
+      </div>
+      <div class="card dark">
+        <h3>Детектирование</h3>
+        <p>O(1) на отсчёт для каждого детектора. Адаптивное опорное среднее следит за режимом ГТД без ложных тревог.</p>
+      </div>
+      <div class="card dark">
+        <h3>Вывод</h3>
+        <p>Один CSV-файл на канал, формат совпадает с примером. CRLF-строки, CP1251, разделитель «;».</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: Detectors -->
+  <div class="slide">
+    <div class="slide-num">5 / 11</div>
+    <h2>Детекторы</h2>
+    <div class="grid-2">
+      <div class="card bad">
+        <div class="badge badge-bad">Bad — Детектор 1</div>
+        <h3>Темп (rate-of-change)</h3>
+        <p>|Δ| &gt; K·σ за один шаг<br>Ловит: резкие скачки, импульсы, ступенчатые сдвиги</p>
+      </div>
+      <div class="card bad">
+        <div class="badge badge-bad">Bad — Детектор 2</div>
+        <h3>Скользящая дисперсия</h3>
+        <p>EWMA дисперсии в окне 100 отсчётов<br>Ловит: залипание датчика, всплески шума</p>
+      </div>
+      <div class="card pot">
+        <div class="badge badge-pot">Potential — Детектор 3</div>
+        <h3>CUSUM с затуханием</h3>
+        <p>Накопленная сумма отклонений от опорного среднего<br>Ловит: устойчивое смещение сигнала</p>
+      </div>
+      <div class="card pot">
+        <div class="badge badge-pot">Potential — Детектор 4</div>
+        <h3>EWMA</h3>
+        <p>Быстрый EWMA vs. медленное опорное среднее (α=0.02)<br>Ловит: медленный дрейф и нарастающее смещение</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: Adaptive ref_mean -->
+  <div class="slide">
+    <div class="slide-num">6 / 11</div>
+    <h2>Адаптивное опорное среднее</h2>
+    <div class="two-col">
+      <div class="left-text">
+        <div class="card dark" style="margin-bottom: 20px;">
+          <h3>Проблема</h3>
+          <p>Температура масла ГТД растёт с 18°C до 54°C при прогреве — 98% флагов были <span class="badge badge-pot">Potential</span> ложно.</p>
+        </div>
+        <div class="card" style="margin-bottom: 20px;">
+          <h3>Решение</h3>
+          <p>Поле <code>ref_mean</code> адаптируется к рабочей точке двигателя со скоростью α = 0.02 (~50 шагов lag).</p>
+          <br>
+          <p>CUSUM и EWMA сравниваются с <code>ref_mean</code>, а не с калибровочным средним.</p>
+        </div>
+        <div class="card good">
+          <h3>Результат</h3>
+          <p>Наборы данных 2 и 4 — прогрев ГТД больше не вызывает ложных Potential.</p>
+        </div>
+      </div>
+      <div>
+        <pre>/* Обновляем очень медленно */
+ref_mean = α·value
+         + (1-α)·ref_mean
+
+/* α = 0.02 — lag ~50 шагов */
+
+/* CUSUM сравнивает с ref_mean */
+diff = value - ref_mean
+S+ = max(0, S+·0.9 + diff - slack)
+S- = max(0, S-·0.9 + slack - diff)
+
+if S+ > threshold
+    → Potential</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: Results -->
+  <div class="slide">
+    <div class="slide-num">7 / 11</div>
+    <h2>Результаты на тренировочных данных</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Набор</th>
+          <th>Строк</th>
+          <th>Датчиков</th>
+          <th>Good</th>
+          <th>Bad</th>
+          <th>Potential</th>
+          <th>Примечание</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>1</strong></td>
+          <td class="num">12 659</td>
+          <td class="num">23</td>
+          <td><span class="ok">91.8%</span></td>
+          <td>6.9%</td>
+          <td>1.3%</td>
+          <td>Расчётные каналы</td>
+        </tr>
+        <tr>
+          <td><strong>2</strong></td>
+          <td class="num">13 720</td>
+          <td class="num">23</td>
+          <td><span class="ok">89.5%</span></td>
+          <td>8.4%</td>
+          <td>2.2%</td>
+          <td>Прогрев ГТД</td>
+        </tr>
+        <tr>
+          <td><strong>3</strong></td>
+          <td class="num">14 896</td>
+          <td class="num">40</td>
+          <td>62.7%</td>
+          <td>31.7%</td>
+          <td>5.5%</td>
+          <td>Запуск двигателя (RPM=0 → 3762)</td>
+        </tr>
+        <tr>
+          <td><strong>4</strong></td>
+          <td class="num">13 743</td>
+          <td class="num">23</td>
+          <td><span class="ok">89.4%</span></td>
+          <td>9.0%</td>
+          <td>1.6%</td>
+          <td>Другой ГТД</td>
+        </tr>
+        <tr>
+          <td><strong>5</strong></td>
+          <td class="num">38 089</td>
+          <td class="num">23</td>
+          <td><span class="ok">94.6%</span></td>
+          <td>3.7%</td>
+          <td>1.6%</td>
+          <td>Установившийся режим</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="margin-top: 16px; font-size: 0.85em; color: #445; text-align: center;">
+      Bad-флаги в наборе 3 — физически обоснованы: датчик RPM корректно определяется как «замороженный» (4809 нулей при остановленном двигателе)
+    </p>
+  </div>
+
+  <!-- SLIDE 7: Resources -->
+  <div class="slide">
+    <div class="slide-num">8 / 11</div>
+    <h2>Соответствие требованиям</h2>
+    <div class="grid-2">
+      <div>
+        <table>
+          <thead><tr><th>Требование</th><th>Лимит</th><th>Факт</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>RAM на канал</td>
+              <td>256 КБ</td>
+              <td class="ok">0.5 КБ</td>
+            </tr>
+            <tr>
+              <td>RAM общая часть</td>
+              <td>5 МБ</td>
+              <td class="ok">~50 КБ</td>
+            </tr>
+            <tr>
+              <td>Период цикла</td>
+              <td>20 мс</td>
+              <td class="ok">~4 мкс</td>
+            </tr>
+            <tr>
+              <td>malloc / calloc</td>
+              <td>запрещено</td>
+              <td class="ok">не используется</td>
+            </tr>
+            <tr>
+              <td>Стандарт</td>
+              <td>C99, POSIX</td>
+              <td class="ok">-std=c99 -pedantic</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <div class="card dark" style="margin-bottom:16px">
+          <h3>Память: DiagChannel</h3>
+          <p style="margin-bottom: 8px"><span class="big-num green">496</span> <span style="color:#556">байт / канал</span></p>
+          <p>Кольцевой буфер float[100] + 9 скалярных переменных. Вся статика, нет кучи.</p>
+        </div>
+        <div class="card dark">
+          <h3>CPU: самый большой датасет</h3>
+          <p style="margin-bottom: 8px"><span class="big-num green">0.16</span> <span style="color:#556">сек / 38 089 строк × 23 канала</span></p>
+          <p>~875 000 вызовов diag_process — в 125× быстрее реального времени</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: Cross-compilation -->
+  <div class="slide">
+    <div class="slide-num">9 / 11</div>
+    <h2>Кросс-компиляция</h2>
+    <div class="grid-3" style="margin-bottom: 24px;">
+      <div class="card">
+        <div class="icon">🖥</div>
+        <h3>x86 / x86_64</h3>
+        <code>gcc</code>
+        <p style="margin-top: 8px">Нативная сборка для виртуального контроллера Astra Linux</p>
+      </div>
+      <div class="card">
+        <div class="icon">⚙️</div>
+        <h3>ARM</h3>
+        <code>arm-linux-gnueabihf-gcc</code>
+        <p style="margin-top: 8px">Промышленные контроллеры, одноплатные ПК</p>
+      </div>
+      <div class="card">
+        <div class="icon">🔧</div>
+        <h3>MIPS</h3>
+        <code>mips-linux-gnu-gcc</code>
+        <p style="margin-top: 8px">Встраиваемые системы, маршрутизаторы</p>
+      </div>
+    </div>
+    <pre>make x86    # → sensor_diag_x86
+make arm    # → sensor_diag_arm
+make mips   # → sensor_diag_mips
+make test   # → 11 тестов, все проходят</pre>
+  </div>
+
+  <!-- SLIDE 9: Usage -->
+  <div class="slide">
+    <div class="slide-num">10 / 11</div>
+    <h2>Запуск</h2>
+    <div class="two-col">
+      <div>
+        <h3 style="margin-bottom: 12px;">Команда</h3>
+        <pre>./sensor_diag_x86 \
+  "Набор данных 1/1.csv" \
+  output_1</pre>
+        <br>
+        <h3 style="margin-bottom: 12px;">Создаёт файлы</h3>
+        <pre>output_1_01.csv   ← Тм масла
+output_1_02.csv   ← Тм входа в Д
+...
+output_1_23.csv   ← последний канал</pre>
+      </div>
+      <div>
+        <h3 style="margin-bottom: 12px;">Формат выходного файла</h3>
+        <pre>TimeStamp;Имя датчика;0 - Bad, 1 - Good, 2 - Potential
+12:10:00.001;21.548;1
+12:10:00.024;21.548;1
+12:10:00.046;21.548;1</pre>
+        <br>
+        <div class="card dark">
+          <ul>
+            <li>Разделитель <code>;</code></li>
+            <li>Строки CRLF (Windows)</li>
+            <li>Кодировка CP1251</li>
+            <li>Метка времени — как в исходном файле</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 10: Summary -->
+  <div class="slide">
+    <div class="slide-num">11 / 11</div>
+    <h2>Итог</h2>
+    <div class="grid-2" style="margin-bottom: 24px;">
+      <div class="card good">
+        <h3>✅ Выполнено</h3>
+        <ul style="margin-top: 8px;">
+          <li>4 детектора: Bad + Potential</li>
+          <li>Автокалибровка на первых 250 отсчётах</li>
+          <li>Адаптация к режиму ГТД (ref_mean)</li>
+          <li>Кросс-компиляция x86 / ARM / MIPS</li>
+          <li>Нет malloc, C99, POSIX</li>
+          <li>11 unit-тестов, все проходят</li>
+          <li>Формат совпадает с примером</li>
+        </ul>
+      </div>
+      <div class="card dark">
+        <h3>📊 Ресурсы</h3>
+        <br>
+        <p>RAM на канал</p>
+        <div class="bar-wrap"><div class="bar green" style="width:0.2%"></div></div>
+        <p style="font-size:0.8em; color:#445">0.5 КБ из 256 КБ</p>
+        <br>
+        <p>Время цикла</p>
+        <div class="bar-wrap"><div class="bar green" style="width:0.02%"></div></div>
+        <p style="font-size:0.8em; color:#445">4 мкс из 20 000 мкс</p>
+        <br>
+        <p>RAM общая</p>
+        <div class="bar-wrap"><div class="bar green" style="width:1%"></div></div>
+        <p style="font-size:0.8em; color:#445">~50 КБ из 5 МБ</p>
+      </div>
+    </div>
+    <div style="text-align:center; padding: 10px;">
+      <span class="badge badge-blue">Язык: C99</span>&nbsp;
+      <span class="badge badge-blue">Платформа: x86_64 Linux (Astra)</span>&nbsp;
+      <span class="badge badge-blue">5 наборов данных · 92 канала</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- Navigation -->
+<nav>
+  <button onclick="prev()">← Назад</button>
+  <span id="counter">1 / 11</span>
+  <button onclick="next()">Вперёд →</button>
+</nav>
+
+<script>
+  let current = 0;
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+
+  function show(n) {
+    slides[current].classList.remove('active');
+    current = (n + total) % total;
+    slides[current].classList.add('active');
+    document.getElementById('counter').textContent = (current + 1) + ' / ' + total;
+  }
+
+  function next() { show(current + 1); }
+  function prev() { show(current - 1); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') next();
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp') prev();
+  });
+
+  let touchStartX = 0;
+  document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, {passive: true});
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (dx < -50) next();
+    else if (dx > 50) prev();
+  }, {passive: true});
+</script>
+</body>
+</html>

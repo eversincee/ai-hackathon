@@ -1,0 +1,4 @@
+sensor_diag_x86
+sensor_diag_arm
+sensor_diag_mips
+run_tests
