@@ -1,0 +1,8 @@
+{
+  "doc_number": null,
+  "doc_type": "no_serial",
+  "product_name": "Розетка OptiMa",
+  "manufacturer_name": "АО «КЭАЗ»",
+  "serial_numbers": [],
+  "tech_specs_keys_expected": ["Номинальное напряжение", "Номинальный ток"]
+}

@@ -1,0 +1,18 @@
+vendors:
+  - name: "АО «ТРЭИ»"
+    doc_prefix: "TREI."
+    serial_pattern: "^[A-Z]\\d[A-Z]\\d{4}$"
+    address: "Россия, 440028, г. Пенза, ул. Германа Титова, 1"
+    phone: "+7 (8412) 49-95-39"
+
+  - name: "АО «ТеконГруп»"
+    doc_prefix: "БНРД."
+    serial_pattern: "^\\d{7}$"
+    address: "ул. 3-я Хорошевская, д. 20, стр. 1, ком. 112, Москва, 123423"
+    phone: "+7 (495) 730-41-12"
+
+  - name: "АО «КЭАЗ»"
+    doc_prefix: "РАЮ"
+    serial_pattern: null
+    address: "Россия, 305000, г. Курск, ул. Луначарского, 8"
+    phone: null

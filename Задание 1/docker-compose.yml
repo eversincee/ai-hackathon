@@ -1,0 +1,44 @@
+# Docker Compose for Passport Digitization System
+# NOTE: Docker is optional. All services can be run natively:
+#   - backend:    cd backend     && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+#   - frontend:   cd frontend    && npm run dev          (port 3000)
+#   - ocr:        cd ocr_service && uvicorn main:app     --host 0.0.0.0 --port 8001
+#   - inference:  ollama serve                           (port 11434)
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    env_file: .env
+    depends_on:
+      - ocr
+      - inference
+    volumes:
+      - ./scans:/app/scans
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8000
+    depends_on:
+      - backend
+
+  ocr:
+    build: ./ocr_service
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./scans:/app/scans
+
+  inference:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+volumes:
+  ollama_data:

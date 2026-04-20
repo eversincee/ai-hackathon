@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Автоматизация обработки паспортов — Хакатон РТУ МИРЭА 2026</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/reveal.min.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/theme/black.min.css"/>
+  <style>
+    :root {
+      --accent: #4f9cf9;
+      --accent2: #34d399;
+      --warn: #fbbf24;
+      --danger: #f87171;
+      --bg-card: rgba(255,255,255,0.06);
+      --border: rgba(255,255,255,0.12);
+      --r-main-font-size: 24px;
+    }
+
+    .reveal {
+      font-size: 24px !important;
+    }
+
+    .reveal .slides section {
+      text-align: left;
+    }
+
+    .reveal h1, .reveal h2, .reveal h3 {
+      text-transform: none;
+      letter-spacing: -0.01em;
+    }
+
+    .reveal h1 { font-size: 1.6em; line-height: 1.15; }
+    .reveal h2 { font-size: 1.2em; color: var(--accent); margin-bottom: 0.5em; }
+    .reveal h3 { font-size: 0.95em; color: var(--accent2); margin-bottom: 0.3em; }
+    .reveal p, .reveal li { font-size: 0.75em; line-height: 1.5; }
+
+    .tag {
+      display: inline-block;
+      background: var(--accent);
+      color: #000;
+      font-size: 0.5em;
+      font-weight: 700;
+      padding: 2px 10px;
+      border-radius: 20px;
+      vertical-align: middle;
+      margin-left: 8px;
+      letter-spacing: 0.04em;
+    }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.9em;
+    }
+    .grid3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.7em;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.65em 0.85em;
+    }
+
+    .card-title {
+      font-size: 0.7em;
+      font-weight: 700;
+      color: var(--accent2);
+      margin-bottom: 0.3em;
+      display: block;
+    }
+
+    .card p, .card li {
+      font-size: 0.68em;
+      margin: 0;
+      line-height: 1.45;
+    }
+
+    .pill {
+      display: inline-block;
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: 0.62em;
+      font-weight: 600;
+      margin: 2px;
+    }
+    .pill-blue  { background: rgba(79,156,249,0.2);  color: var(--accent);  border: 1px solid rgba(79,156,249,0.4); }
+    .pill-green { background: rgba(52,211,153,0.2);  color: var(--accent2); border: 1px solid rgba(52,211,153,0.4); }
+    .pill-warn  { background: rgba(251,191,36,0.2);  color: var(--warn);    border: 1px solid rgba(251,191,36,0.4); }
+    .pill-red   { background: rgba(248,113,113,0.2); color: var(--danger);  border: 1px solid rgba(248,113,113,0.4); }
+
+    .confidence-row {
+      display: flex;
+      gap: 0.6em;
+      margin: 0.5em 0;
+    }
+    .conf-block {
+      flex: 1;
+      border-radius: 8px;
+      padding: 0.5em 0.7em;
+      font-size: 0.65em;
+    }
+    .conf-green { background: rgba(52,211,153,0.15); border: 1px solid rgba(52,211,153,0.4); }
+    .conf-warn  { background: rgba(251,191,36,0.15);  border: 1px solid rgba(251,191,36,0.4); }
+    .conf-red   { background: rgba(248,113,113,0.15); border: 1px solid rgba(248,113,113,0.4); }
+
+    .big-number {
+      font-size: 1.8em;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .subtitle {
+      font-size: 0.72em;
+      color: rgba(255,255,255,0.55);
+    }
+
+    .title-slide h1 { font-size: 1.65em; }
+    .title-slide .subtitle { font-size: 0.78em; margin-top: 0.3em; }
+    .title-slide .meta { font-size: 0.58em; color: rgba(255,255,255,0.38); margin-top: 1.4em; }
+
+    ul { margin: 0; padding-left: 1.2em; }
+    ul li { margin-bottom: 0.25em; }
+
+    .vs-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.68em;
+    }
+    .vs-table th {
+      background: rgba(79,156,249,0.15);
+      color: var(--accent);
+      padding: 0.45em 0.7em;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .vs-table td {
+      padding: 0.4em 0.7em;
+      border: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .vs-table tr:nth-child(even) td {
+      background: rgba(255,255,255,0.03);
+    }
+
+    .step-list {
+      list-style: none;
+      padding: 0;
+      counter-reset: steps;
+    }
+    .step-list li {
+      counter-increment: steps;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6em;
+      margin-bottom: 0.3em;
+      font-size: 0.7em;
+    }
+    .step-list li::before {
+      content: counter(steps);
+      min-width: 1.5em;
+      height: 1.5em;
+      background: var(--accent);
+      color: #000;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85em;
+      flex-shrink: 0;
+    }
+
+    .arch-box {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.5em 0.9em;
+      font-size: 0.7em;
+      margin-bottom: 0.4em;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .arch-box .port { color: var(--accent); font-weight: 600; }
+
+    .score-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3em;
+    }
+    .score-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.68em;
+      padding: 0.35em 0.7em;
+      border-radius: 6px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+    }
+    .score-item .pts {
+      font-weight: 700;
+      color: var(--accent);
+      white-space: nowrap;
+      margin-left: 1em;
+    }
+    .score-item.bonus {
+      border-color: rgba(52,211,153,0.35);
+    }
+    .score-item.bonus .pts { color: var(--accent2); }
+  </style>
+</head>
+<body>
+<div class="reveal">
+  <div class="slides">
+
+    <!-- 1. Титул -->
+    <section class="title-slide" data-background-gradient="radial-gradient(ellipse at 30% 40%, rgba(79,156,249,0.15) 0%, transparent 60%), radial-gradient(ellipse at 80% 70%, rgba(52,211,153,0.1) 0%, transparent 50%)">
+      <h1>Автоматизация оцифровки паспортов оборудования</h1>
+      <p class="subtitle">Задача 1 — Хакатон РТУ МИРЭА 2026</p>
+      <p class="meta">FastAPI · Surya OCR · Qwen2.5-VL · Next.js · SQLite · Ollama</p>
+    </section>
+
+    <!-- 2. Контекст задачи -->
+    <section>
+      <h2>Контекст задачи</h2>
+      <div class="grid2" style="margin-top:0.6em;">
+        <div>
+          <h3>Что такое паспорт оборудования</h3>
+          <p style="font-size:0.72em; color:rgba(255,255,255,0.75);">Официальный документ по <strong style="color:#fff;">ГОСТ Р 2.610-2019</strong>, содержащий технические характеристики, правила эксплуатации, хранения и транспортировки. Обязателен для сертификации, регистрации в Гостехнадзоре и инвентаризации на складах.</p>
+          <br/>
+          <h3>Проблема</h3>
+          <ul style="font-size:0.7em;">
+            <li>Паспорта поступают в бумажном виде — на стандартных бланках, по форме производителя или в произвольной форме</li>
+            <li>Ручной перенос данных в 1С занимает часы и сопряжён с ошибками</li>
+            <li>Физические документы сложно отслеживать на этапах приёмки, хранения и отгрузки</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Цель задачи</h3>
+          <p style="font-size:0.7em; color:rgba(255,255,255,0.75);">Создать комплексную систему перевода паспортов в цифровой формат и автоматизированного управления в едином цикле — от изготовления до поставки заказчику.</p>
+          <br/>
+          <div class="card" style="margin-bottom:0.5em;">
+            <span class="card-title">Требования организаторов</span>
+            <ul style="font-size:0.67em;">
+              <li>Распознавание текста и цифровых данных с отсканированных паспортов</li>
+              <li>Занесение данных в табличный формат 1С</li>
+              <li>Генерация штрихкодов (Code 39 / Code 128 / EAN-13) для каждого паспорта и шкафа</li>
+              <li>Идентификация оборудования по штрихкоду через сканер (ТСД, лазерный, 2D)</li>
+              <li>Формирование общей таблицы паспортов шкафа</li>
+            </ul>
+          </div>
+          <div class="card">
+            <span class="card-title">Бонусные требования</span>
+            <ul style="font-size:0.67em;">
+              <li>Интеграция с 1С · Обратная связь оператора · Чек-листы и выгрузка отчётов</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Ключевая идея -->
+    <section>
+      <h2>Ключевая идея: двойное распознавание</h2>
+      <p style="font-size:0.72em; color:rgba(255,255,255,0.6); margin-bottom:0.8em;">Одного OCR недостаточно — реальные сканы бывают повёрнуты, засвечены, с печатями поверх текста. Запускаем два независимых метода параллельно и сравниваем результаты.</p>
+      <div class="grid2">
+        <div class="card">
+          <span class="card-title">Ветка A — VLM (Qwen2.5-VL)</span>
+          <p>Нейросеть анализирует изображение страницы целиком и сразу формирует структурированный JSON.</p>
+          <br/>
+          <p style="color:var(--accent2); font-size:0.7em; font-weight:600;">Преимущества:</p>
+          <ul style="font-size:0.67em;">
+            <li>Понимает структуру таблиц и расположение полей</li>
+            <li>Устойчива к низкому качеству скана и наклонам</li>
+            <li>Не зависит от качества OCR-слоя</li>
+          </ul>
+        </div>
+        <div class="card">
+          <span class="card-title">Ветка B — OCR → LLM (Surya + Qwen2.5)</span>
+          <p>Surya извлекает текст со скана, Qwen2.5-Instruct структурирует его в JSON по заданной схеме.</p>
+          <br/>
+          <p style="color:var(--accent2); font-size:0.7em; font-weight:600;">Преимущества:</p>
+          <ul style="font-size:0.67em;">
+            <li>Выше точность на чётком печатном тексте</li>
+            <li>Меньше ошибок в числовых значениях и кодах</li>
+            <li>Оптимизирован под русский язык</li>
+          </ul>
+        </div>
+      </div>
+      <div class="confidence-row" style="margin-top:0.8em;">
+        <div class="conf-block conf-green">
+          <strong>Оба источника совпали</strong><br/>Уверенность 100% · поле выделено зелёным
+        </div>
+        <div class="conf-block conf-warn">
+          <strong>Один источник пуст</strong><br/>Уверенность 70% · требует проверки
+        </div>
+        <div class="conf-block conf-red">
+          <strong>Источники расходятся</strong><br/>Уверенность 50% · ручная корректировка
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Pipeline -->
+    <section>
+      <h2>Pipeline обработки документа</h2>
+      <ol class="step-list" style="margin-top:0.5em;">
+        <li><span><strong>Загрузка</strong> — пользователь загружает PDF или изображение через веб-интерфейс</span></li>
+        <li><span><strong>Предобработка</strong> — PyMuPDF разбивает PDF на отдельные страницы, выполняется автоматическая коррекция ориентации</span></li>
+        <li><span><strong>Параллельное распознавание</strong> — VLM и OCR→LLM запускаются одновременно, независимо друг от друга</span></li>
+        <li><span><strong>Объединение результатов (merge)</strong> — поля сравниваются, каждому присваивается коэффициент уверенности</span></li>
+        <li><span><strong>Валидация</strong> — проверка форматов номера документа, серийных номеров, соответствия производителя, наличия даты выпуска</span></li>
+        <li><span><strong>Маршрутизация</strong> — уверенность &gt;90% и нет ошибок → автоматическое одобрение; иначе → очередь ручной проверки</span></li>
+        <li><span><strong>Ревью оператора</strong> — скан и форма с полями отображаются рядом; цветовая индикация уверенности по каждому полю</span></li>
+        <li><span><strong>Штрихкод и экспорт</strong> — генерация Code 128, PDF-этикетки, CSV / CommerceML XML / PDF чек-лист</span></li>
+      </ol>
+    </section>
+
+    <!-- 5. Почему локально -->
+    <section>
+      <h2>Почему локальные модели</h2>
+      <div class="grid2" style="margin-top:0.7em;">
+        <div>
+          <h3>Конфиденциальность данных</h3>
+          <p>Паспорта оборудования содержат технические характеристики, серийные номера и данные производителей. При использовании локальных моделей документы не покидают инфраструктуру предприятия.</p>
+          <br/>
+          <h3>Автономная работа</h3>
+          <p>После первоначальной загрузки моделей система функционирует без подключения к интернету — в том числе в производственных и складских помещениях с ограниченной сетевой доступностью.</p>
+        </div>
+        <div>
+          <h3>Системные требования</h3>
+          <table class="vs-table">
+            <tr><th>Ресурс</th><th>Необходимо</th></tr>
+            <tr><td>Оперативная память</td><td>8 ГБ (qwen2.5vl:3b)</td></tr>
+            <tr><td>Дисковое пространство</td><td>~15 ГБ (модели)</td></tr>
+            <tr><td>Графический процессор</td><td>не требуется</td></tr>
+            <tr><td>Интернет</td><td>только при установке</td></tr>
+          </table>
+          <br/>
+          <p style="font-size:0.68em; color:var(--accent2);">При наличии GPU inference выносится на отдельный сервер — достаточно изменить одну переменную окружения в <code>.env</code>.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Архитектура -->
+    <section>
+      <h2>Архитектура системы</h2>
+      <div style="margin-top:0.7em;">
+        <div class="arch-box">
+          <span><strong>Frontend</strong> &nbsp;·&nbsp; Next.js + React + TypeScript + Tailwind + shadcn/ui</span>
+          <span class="port">:3000</span>
+        </div>
+        <div style="text-align:center; color:var(--accent); font-size:1.1em; margin: 0.1em 0;">↕ HTTP REST API</div>
+        <div class="arch-box">
+          <span><strong>Backend</strong> &nbsp;·&nbsp; FastAPI + SQLite + PyMuPDF + python-barcode + reportlab</span>
+          <span class="port">:8000</span>
+        </div>
+        <div style="display:flex; gap:1em; margin-top:0.1em;">
+          <div style="flex:1; text-align:center; color:var(--accent); font-size:1em;">↕ HTTP</div>
+          <div style="flex:1; text-align:center; color:var(--accent); font-size:1em;">↕ HTTP</div>
+        </div>
+        <div style="display:flex; gap:0.8em;">
+          <div class="arch-box" style="flex:1;">
+            <span><strong>OCR-сервис</strong> &nbsp;·&nbsp; Surya — распознавание русского и английского текста</span>
+            <span class="port">:8001</span>
+          </div>
+          <div class="arch-box" style="flex:1;">
+            <span><strong>Inference</strong> &nbsp;·&nbsp; Ollama · Qwen2.5-VL 3b · Qwen2.5 7b-instruct</span>
+            <span class="port">:11434</span>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:0.64em; color:rgba(255,255,255,0.45); margin-top:0.7em;">Каждый сервис запускается и масштабируется независимо. Доступен запуск через Docker Compose.</p>
+    </section>
+
+    <!-- 7. Валидация -->
+    <section>
+      <h2>Валидация и контроль качества</h2>
+      <p style="font-size:0.72em; color:rgba(255,255,255,0.6); margin-bottom:0.7em;">Распознать данные недостаточно — необходимо убедиться в их корректности.</p>
+      <div class="grid2">
+        <div>
+          <h3>Проверяемые условия</h3>
+          <ul style="font-size:0.7em;">
+            <li>Формат номера документа соответствует шаблону<br/><span style="color:rgba(255,255,255,0.45); font-size:0.88em;">БНРД.XXX.XXX ПС, TREI.XXX.XXX ПС</span></li>
+            <li>Серийные номера соответствуют паттерну производителя<br/><span style="color:rgba(255,255,255,0.45); font-size:0.88em;">TREI: A1B2345 · TECON: 7 цифр</span></li>
+            <li>Наименование производителя соответствует префиксу документа</li>
+            <li>При наличии гарантийного срока указана дата выпуска</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Справочник производителей</h3>
+          <p style="font-size:0.7em;">Файл <code>vendors.yaml</code> содержит список производителей с паттернами номеров документов и серийников. Расширяется без изменения кода.</p>
+          <br/>
+          <div class="confidence-row" style="flex-direction:column; gap:0.4em;">
+            <div class="conf-block conf-green" style="font-size:0.65em;">
+              <strong>Данные валидны, уверенность &gt;90%</strong> — автоматическое одобрение
+            </div>
+            <div class="conf-block conf-warn" style="font-size:0.65em;">
+              <strong>Предупреждение</strong> — оператор проверяет поле
+            </div>
+            <div class="conf-block conf-red" style="font-size:0.65em;">
+              <strong>Ошибка валидации</strong> — обязательная ручная корректировка
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. Интерфейс -->
+    <section>
+      <h2>Интерфейс оператора</h2>
+      <div class="grid2" style="margin-top:0.6em;">
+        <div>
+          <h3>Страница проверки (ревью)</h3>
+          <ul style="font-size:0.7em;">
+            <li>Скан документа и форма отображаются рядом</li>
+            <li>Каждое поле подсвечено по уровню уверенности</li>
+            <li>Клик по полю — подсветка соответствующей области на скане</li>
+            <li>Кнопки «Одобрить» / «Отклонить»</li>
+          </ul>
+          <br/>
+          <h3>Прочие разделы интерфейса</h3>
+          <ul style="font-size:0.7em;">
+            <li><strong>Загрузка</strong> — drag-and-drop, поддержка PDF и изображений</li>
+            <li><strong>Сборки</strong> — группировка паспортов шкафа</li>
+            <li><strong>Сканирование</strong> — поиск по штрихкоду</li>
+            <li><strong>Экспорт</strong> — CSV, XML, PDF чек-лист</li>
+            <li><strong>Импорт 1С</strong> — привязка к строке номенклатуры</li>
+          </ul>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:0.6em; justify-content:center;">
+          <div class="card">
+            <span class="card-title">Цветовая индикация полей</span>
+            <div style="display:flex; flex-direction:column; gap:0.35em; margin-top:0.3em;">
+              <div style="display:flex; align-items:center; gap:0.6em; font-size:0.68em;">
+                <div style="width:11px; height:11px; border-radius:3px; background:var(--accent2); flex-shrink:0;"></div>
+                Оба источника совпали (≥90%)
+              </div>
+              <div style="display:flex; align-items:center; gap:0.6em; font-size:0.68em;">
+                <div style="width:11px; height:11px; border-radius:3px; background:var(--warn); flex-shrink:0;"></div>
+                Один источник не вернул значение (70%)
+              </div>
+              <div style="display:flex; align-items:center; gap:0.6em; font-size:0.68em;">
+                <div style="width:11px; height:11px; border-radius:3px; background:var(--danger); flex-shrink:0;"></div>
+                Источники вернули разные значения (&lt;70%)
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <span class="card-title">Обратная связь оператора</span>
+            <p>Исправления оператора фиксируются в <code>feedback.jsonl</code> и могут использоваться для дообучения моделей.</p>
+          </div>
+          <div class="card">
+            <span class="card-title">Интеграция с 1С</span>
+            <p>Загрузка CSV «Фактического Поступления» → привязка паспорта к строке номенклатуры по коду СУ.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. Сборки и экспорт -->
+    <section>
+      <h2>Сборки, штрихкоды и экспорт</h2>
+      <div class="grid3" style="margin-top:0.6em;">
+        <div class="card">
+          <span class="card-title">Штрихкоды Code 128</span>
+          <ul style="font-size:0.67em;">
+            <li>Уникальный идентификатор каждого паспорта</li>
+            <li>PDF-этикетка для печати и размещения на оригинале</li>
+            <li>Идентификация через сканер ТСД / лазерный / 2D</li>
+            <li>Поиск карточки по коду в веб-интерфейсе</li>
+          </ul>
+        </div>
+        <div class="card">
+          <span class="card-title">Сборки (шкафы)</span>
+          <ul style="font-size:0.67em;">
+            <li>Объединение паспортов одного шкафа в единую запись</li>
+            <li>Указание названия, кода проекта, заводского номера</li>
+            <li>Штрихкод на сборку в целом</li>
+            <li>Сводная таблица в формате Приложения 4</li>
+          </ul>
+        </div>
+        <div class="card">
+          <span class="card-title">Экспорт</span>
+          <ul style="font-size:0.67em;">
+            <li>CSV с BOM для корректного открытия в Excel</li>
+            <li>CommerceML XML — стандарт обмена данными 1С</li>
+            <li>PDF чек-лист для приёмки на складе</li>
+            <li>Привязка к номенклатуре по коду СУ</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. Критерии -->
+    <section>
+      <h2>Соответствие критериям оценивания</h2>
+      <div class="grid2" style="margin-top:0.6em; align-items:start;">
+        <div>
+          <h3>Основные критерии</h3>
+          <div class="score-row">
+            <div class="score-item">
+              <span>Точность распознавания текстовой и цифровой информации</span>
+              <span class="pts">0–4 балла</span>
+            </div>
+            <div class="score-item">
+              <span>Полнота и точность извлечённой информации, визуализация источников</span>
+              <span class="pts">0–2 балла</span>
+            </div>
+            <div class="score-item">
+              <span>Удобство и интерактивность пользовательского интерфейса</span>
+              <span class="pts">0–2 балла</span>
+            </div>
+            <div class="score-item">
+              <span>Процент ошибок при распознавании</span>
+              <span class="pts">0–2 балла</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h3>Бонусные задачи</h3>
+          <div class="score-row">
+            <div class="score-item bonus">
+              <span>Возможность работы в среде 1С (CSV + CommerceML XML)</span>
+              <span class="pts">+1 балл</span>
+            </div>
+            <div class="score-item bonus">
+              <span>Поддержка пользовательской обратной связи (feedback.jsonl)</span>
+              <span class="pts">+1 балл</span>
+            </div>
+            <div class="score-item bonus">
+              <span>Генерация чек-листов и выгрузка для интеграции</span>
+              <span class="pts">+1 балл</span>
+            </div>
+          </div>
+          <br/>
+          <p style="font-size:0.65em; color:var(--accent2);">Все три бонусных критерия реализованы в системе.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11. Технологии -->
+    <section>
+      <h2>Стек технологий</h2>
+      <div class="grid2" style="margin-top:0.6em;">
+        <div>
+          <h3>Backend</h3>
+          <div>
+            <span class="pill pill-blue">FastAPI</span>
+            <span class="pill pill-blue">SQLite</span>
+            <span class="pill pill-blue">PyMuPDF</span>
+            <span class="pill pill-blue">Pillow</span>
+            <span class="pill pill-blue">python-barcode</span>
+            <span class="pill pill-blue">reportlab</span>
+            <span class="pill pill-blue">PyYAML</span>
+            <span class="pill pill-blue">httpx</span>
+          </div>
+          <br/>
+          <h3>AI / ML</h3>
+          <div>
+            <span class="pill pill-green">Qwen2.5-VL 3b</span>
+            <span class="pill pill-green">Qwen2.5 7b-instruct</span>
+            <span class="pill pill-green">Surya OCR</span>
+            <span class="pill pill-green">Ollama</span>
+          </div>
+        </div>
+        <div>
+          <h3>Frontend</h3>
+          <div>
+            <span class="pill pill-warn">Next.js 14</span>
+            <span class="pill pill-warn">React</span>
+            <span class="pill pill-warn">TypeScript</span>
+            <span class="pill pill-warn">Tailwind CSS</span>
+            <span class="pill pill-warn">shadcn/ui</span>
+            <span class="pill pill-warn">react-dropzone</span>
+          </div>
+          <br/>
+          <h3>Инфраструктура</h3>
+          <div>
+            <span class="pill pill-red">Docker Compose</span>
+            <span class="pill pill-red">Python 3.12</span>
+            <span class="pill pill-red">Node.js 20+</span>
+          </div>
+          <br/>
+          <h3>Тестирование</h3>
+          <div>
+            <span class="pill pill-blue">pytest</span>
+            <span class="pill pill-blue">pytest-asyncio</span>
+            <span class="pill pill-blue">golden-файлы</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12. Итоги -->
+    <section data-background-gradient="radial-gradient(ellipse at 20% 50%, rgba(52,211,153,0.1) 0%, transparent 60%), radial-gradient(ellipse at 80% 30%, rgba(79,156,249,0.12) 0%, transparent 50%)">
+      <h2>Результаты</h2>
+      <div class="grid3" style="margin-top:0.7em;">
+        <div style="text-align:center; padding:0.8em;">
+          <div class="big-number">×15</div>
+          <p style="font-size:0.66em; color:rgba(255,255,255,0.6); margin-top:0.3em;">ускорение обработки<br/>одного паспорта</p>
+        </div>
+        <div style="text-align:center; padding:0.8em;">
+          <div class="big-number">2</div>
+          <p style="font-size:0.66em; color:rgba(255,255,255,0.6); margin-top:0.3em;">независимых метода<br/>распознавания</p>
+        </div>
+        <div style="text-align:center; padding:0.8em;">
+          <div class="big-number">0</div>
+          <p style="font-size:0.66em; color:rgba(255,255,255,0.6); margin-top:0.3em;">данных во внешних<br/>сервисах — полностью локально</p>
+        </div>
+      </div>
+      <div class="grid2" style="margin-top:0.7em;">
+        <div class="card">
+          <span class="card-title">Реализовано</span>
+          <ul style="font-size:0.67em;">
+            <li>Полный цикл: загрузка → распознавание → проверка → экспорт</li>
+            <li>Ensemble VLM + OCR→LLM с уверенностью по каждому полю</li>
+            <li>Валидация по справочнику производителей</li>
+            <li>Штрихкоды Code 128, сборки шкафов</li>
+            <li>Экспорт CSV, CommerceML XML, PDF чек-лист</li>
+            <li>Обратная связь оператора и все бонусные критерии</li>
+          </ul>
+        </div>
+        <div class="card">
+          <span class="card-title">Запуск</span>
+          <ul style="font-size:0.67em;">
+            <li>Python 3.12 + Node.js 20 + Ollama</li>
+            <li>4 команды в терминале</li>
+            <li>Работает без GPU и без интернета после установки</li>
+            <li>Docker Compose — опционально</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/reveal.min.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: 'c/t',
+    transition: 'fade',
+    transitionSpeed: 'fast',
+    controls: true,
+    progress: true,
+    center: false,
+    width: 1280,
+    height: 720,
+    margin: 0.04,
+    minScale: 0.1,
+    maxScale: 1.5,
+    disableLayout: false,
+  });
+</script>
+</body>
+</html>
