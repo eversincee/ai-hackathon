@@ -52,7 +52,7 @@
                     ↓
 4. ДВОЙНОЕ РАСПОЗНАВАНИЕ (ensemble)
    Параллельно запускаются две независимые ветки:
-   
+
    Ветка A: VLM (Qwen2.5-VL)              Ветка B: OCR → LLM
    Нейросеть СМОТРИТ на картинку       Surya ЧИТАЕТ текст со скана
    и сразу выдаёт JSON с полями    →   затем Qwen2.5 СТРУКТУРИРУЕТ
@@ -111,7 +111,7 @@
 Браузер (localhost:3000)          ← Next.js + React + Tailwind
         ↕ HTTP
 Backend (localhost:8000)          ← FastAPI + SQLite
-        ↕ HTTP                    
+        ↕ HTTP
 OCR-сервис (localhost:8001)       ← Surya (распознавание текста)
 Inference (localhost:11434)       ← Ollama (Qwen2.5-VL + Qwen2.5)
 ```
@@ -256,9 +256,3 @@ pytest tests/ -v
 ```
 
 ---
-
-## Спецификация
-
-Полная спецификация: [docs/superpowers/specs/2026-04-11-passport-digitization-design.md](docs/superpowers/specs/2026-04-11-passport-digitization-design.md)
-
-План реализации: [docs/superpowers/plans/2026-04-11-passport-digitization-plan.md](docs/superpowers/plans/2026-04-11-passport-digitization-plan.md)
