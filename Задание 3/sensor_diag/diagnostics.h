@@ -9,12 +9,12 @@
 #define DIAG_ALPHA          0.05    /* скорость EWMA сигнала */
 #define DIAG_ALPHA_VAR      0.05    /* скорость EWMA оценки дисперсии */
 #define DIAG_ALPHA_REF      0.02    /* скорость адаптации опорного среднего (~50 тактов = ~1 сек) */
-#define DIAG_K_RATE         5.0     /* порог темпового детектора (в std) */
-#define DIAG_K_FROZEN       0.001   /* нижний порог дисперсии (доля std^2) */
-#define DIAG_K_NOISE        10.0    /* верхний порог дисперсии (кратно std^2) */
-#define DIAG_K_CUSUM        25.0    /* порог CUSUM (в std) */
+#define DIAG_K_RATE         8.0     /* порог темпового детектора (в std) */
+#define DIAG_K_FROZEN       0.0005  /* нижний порог дисперсии (доля std^2) */
+#define DIAG_K_NOISE        20.0    /* верхний порог дисперсии (кратно std^2) */
+#define DIAG_K_CUSUM        40.0    /* порог CUSUM (в std) */
 #define DIAG_CUSUM_DECAY    0.9     /* коэффициент затухания CUSUM за один такт */
-#define DIAG_K_EWMA         6.0     /* порог EWMA (в std) */
+#define DIAG_K_EWMA         10.0    /* порог EWMA (в std) */
 #define DIAG_CALIB_OUTLIER  3.0     /* порог отбрасывания выбросов при калибровке */
 
 /* --- Флаги качества --- */
